@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExamStudio | Data Analytics in Accounting</title>
+<link rel="stylesheet" href="style.css">
+<script src="exams.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="frame bar">
+    <a href="./" class="brand"><span class="mark" aria-hidden="true">ES</span> ExamStudio</a>
+    <span>Data Analytics in Accounting</span>
+  </div>
+</header>
+<main id="main" class="frame">
+  <section id="catalog">
+    <div class="intro">
+      <div>
+        <h1>Practice exams</h1>
+        <p>Work in Excel and SQL with the course files. After submission, see where your calculation first diverges and how to check it.</p>
+      </div>
+      <button id="random" class="primary" type="button">Choose one for me</button>
+    </div>
+    <div id="exam-list" class="exam-list"></div>
+  </section>
+  <section id="workspace" hidden>
+    <button type="button" id="back" class="quiet">All practice exams</button>
+    <div class="exam-header">
+      <div><h1 id="exam-title" tabindex="-1"></h1><p id="exam-summary"></p></div>
+      <div class="clock"><span>Time remaining</span><strong id="clock" role="timer"></strong></div>
+    </div>
+    <div class="columns">
+      <aside aria-label="Exam controls">
+        <section class="panel">
+          <h2>Course files</h2>
+          <p>Download and open the files before starting. The timer keeps running while you use hints.</p>
+          <div id="downloads" class="downloads"></div>
+          <button type="button" id="start" class="primary">Start exam</button>
+        </section>
+        <p id="exam-status" role="status"></p>
+      </aside>
+      <form id="exam-form">
+        <div id="questions"></div>
+        <button type="submit" id="submit" class="primary" hidden>Submit exam</button>
+      </form>
+    </div>
+    <section id="results" aria-labelledby="results-title" hidden>
+      <h2 id="results-title" tabindex="-1">Your review</h2>
+      <p id="result-summary"></p>
+      <div id="feedback"></div>
+      <button type="button" id="retry" class="quiet">Try this exam again</button>
+    </section>
+  </section>
+</main>
+<footer class="frame">Independent practice project · Based on the supplied SDU course materials</footer>
+</body>
+</html>
