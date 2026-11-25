@@ -20,8 +20,10 @@ Use the local server below for live Gemini replies.
 3. Paste the key when the terminal prompts for it. The input is hidden.
 4. Open [http://127.0.0.1:8765](http://127.0.0.1:8765) and start an exam.
 
-The server uses `GEMINI_API_KEY` if it is already set. The key stays on the
-server, in memory if entered at the prompt. Press Enter without a key to
+The server uses `GEMINI_API_KEY` if it is already set. Use the hidden terminal
+prompt for local practice. The key stays in the local server process and is
+sent as an HTTPS request header to the Gemini API. Keep keys out of source
+code, published files, and Git history. Press Enter without a key to
 practise with the numeric feedback only. Opening `index.html` directly provides the same course hints as GitHub Pages.
 
 If Gemini returns a temporary server error, ExamStudio tries the alternate

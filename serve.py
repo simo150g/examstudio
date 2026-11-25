@@ -1,13 +1,14 @@
 """Serve ExamStudio and proxy its AI hints to the Gemini API on localhost."""
 
 import argparse
-from getpass import getpass
+from getpass import GetPassWarning, getpass
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
 import re
 import sys
+import warnings
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlsplit
 from urllib.request import Request, urlopen
@@ -17,7 +18,14 @@ DEFAULT_MODEL = "gemini-3.1-flash-lite"
 FALLBACK_MODEL = "gemini-3.5-flash-lite"
 TRANSIENT_HTTP_CODES = {500, 502, 503, 504}
 STATIC_FILES = {"/", "/index.html", "/style.css", "/exams.js", "/app.js"}
-STATIC_FILES.update("/data/" + path.name for path in (ROOT / "data").iterdir() if path.is_file())
+STATIC_FILES.update({
+    "/data/Analytics_mindset_case_studies_ETL_Case1.csv",
+    "/data/Chinook_Sqlite.sqlite",
+    "/data/reconcile-data.zip",
+    "/data/scope-data.zip",
+    "/data/songs.db",
+    "/data/units-data.zip",
+})
 FIELD_LIMITS = {"file": 160, "fields": 1200, "exercise": 1800, "checkpoint": 200, "question": 1500}
 MAX_BODY_BYTES = 18000
 SYSTEM_INSTRUCTION = (
@@ -62,9 +70,10 @@ def request_gemini(context, key, model):
     request = Request(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json", "x-goog-api-key": key},
+        headers={"Content-Type": "application/json"},
         method="POST",
     )
+    request.add_unredirected_header("X-Goog-Api-Key", key)
     with urlopen(request, timeout=15) as response:
         return json.load(response)
 
@@ -108,6 +117,8 @@ def generate_hint(context, key, model):
         hint = ""
     if not hint:
         raise TutorError(502, "Gemini did not return a hint. Try rephrasing your question.")
+    if key in hint:
+        raise TutorError(502, "Gemini did not return a usable hint. Try rephrasing your question.")
     if candidate.get("finishReason") == "MAX_TOKENS":
         raise TutorError(502, "Gemini’s hint was cut short. Try a narrower question.")
     return hint
@@ -118,10 +129,13 @@ class ExamStudioHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
     def send_head(self):
-        if unquote(urlsplit(self.path).path) not in STATIC_FILES:
-            self.send_error(404)
-            return None
-        return super().send_head()
+        path = unquote(urlsplit(self.path).path)
+        if path in STATIC_FILES:
+            file = ROOT / ("index.html" if path == "/" else path.lstrip("/"))
+            if file.is_file() and file.resolve() == file:
+                return super().send_head()
+        self.send_error(404)
+        return None
 
     def do_POST(self):
         if self.path != "/api/hint":
@@ -169,8 +183,13 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        key = getpass("Gemini API key (hidden, or press Enter to practise without AI): ").strip()
+    if not key and sys.stdin.isatty():
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", GetPassWarning)
+                key = getpass("Gemini API key (hidden, or press Enter to practise without AI): ").strip()
+        except (GetPassWarning, EOFError):
+            print("Hidden input is unavailable. Starting without Gemini.", file=sys.stderr)
     model = os.environ.get("EXAMSTUDIO_GEMINI_MODEL", "").strip() or DEFAULT_MODEL
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9.-]*", model):
         parser.error("EXAMSTUDIO_GEMINI_MODEL must be a Gemini model ID.")
